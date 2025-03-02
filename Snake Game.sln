@@ -1,28 +1,129 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.12.35707.178 d17.12
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Snake Game", "Snake Game.vcxproj", "{3864D06B-007D-49EC-85C5-70F1D40352AB}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Debug|x64.ActiveCfg = Debug|x64
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Debug|x64.Build.0 = Debug|x64
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Debug|x86.ActiveCfg = Debug|Win32
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Debug|x86.Build.0 = Debug|Win32
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Release|x64.ActiveCfg = Release|x64
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Release|x64.Build.0 = Release|x64
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Release|x86.ActiveCfg = Release|Win32
-		{3864D06B-007D-49EC-85C5-70F1D40352AB}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-EndGlobal
+#include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Network.hpp>
+#include <iostream>
+#include <random>
+#include <queue>
+#include <cstdlib>
+#include <ctime> 
+
+using namespace std;
+
+int main()
+{
+	deque<pair<int, int>> snake;
+	set<pair<int, int>> s;
+	pair<int, int> head;
+	int cellsize = 30;
+	sf::RenderWindow window(sf::VideoMode(cellsize * 15, cellsize * 15), "SNAKE GAME", sf::Style::Default);
+	sf::RectangleShape cell(sf::Vector2f(cellsize - 2, cellsize - 2));
+	sf::RectangleShape body(sf::Vector2f(cellsize - 2, cellsize - 2));
+	sf::RectangleShape fruit(sf::Vector2f(cellsize - 2, cellsize - 2));
+	cell.setOutlineThickness(2);
+	cell.setFillColor(sf::Color::White);
+	cell.setOutlineColor(sf::Color::Black);
+	body.setFillColor(sf::Color::Green);
+	fruit.setFillColor(sf::Color::Red);
+	srand(static_cast<unsigned>(time(0)));
+	bool tok_fruit = false;
+
+	int randomX = rand() % 15;
+	int randomY = rand() % 15;
+	head = { 7,7 };
+	snake.push_back({ 7,7 });
+	s.insert({ 7,7 });
+	bool first_move = false;
+	sf::Event ev;
+
+	char move = ' ';
+	while (window.isOpen())
+	{
+		while (window.pollEvent(ev))
+		{
+			switch (ev.type)
+			{
+			case sf::Event::KeyPressed:
+				if (ev.key.code == sf::Keyboard::W)
+				{
+					if (move != 'S')
+						move = 'W';
+				}
+				else if (ev.key.code == sf::Keyboard::S)
+				{
+					if (move != 'W')
+						move = 'S';
+				}
+				else if (ev.key.code == sf::Keyboard::D)
+				{
+					if (move != 'A')
+						move = 'D';
+				}
+				else if (ev.key.code == sf::Keyboard::A)
+				{
+					if (move != 'D')
+						move = 'A';
+				}
+				first_move = true;
+			}
+		}
+		window.clear();
+		for (int i = 0;i < 15;i++)
+			for (int j = 0;j < 15;j++)
+			{
+				cell.setPosition(i * cellsize, j * cellsize);
+				window.draw(cell);
+			}
+		if (first_move) {
+			int delx = snake.front().first, dely = snake.front().second;
+			if (!tok_fruit)
+			{
+				s.erase({ delx,dely });
+				snake.pop_front();
+			}
+			int x = head.first, y = head.second;
+			if (move == 'W') {
+				y--;
+			}
+			else if (move == 'S') {
+				y++;
+			}
+			else if (move == 'D') {
+				x++;
+			}
+			else if (move == 'A') {
+				x--;
+			}
+			if (x < 0 || y < 0 || x >= 15 || y >= 15) {
+				window.close();
+			}
+			if (s.find({ x,y }) != s.end())
+				window.close();
+			tok_fruit = false;
+			if (x == randomX && y == randomY)
+			{
+				tok_fruit = true;
+				randomX = rand() % 15, randomY = rand() % 15;
+				while (s.find({ randomX,randomY }) != s.end())
+				{
+					randomX = rand() % 15, randomY = rand() % 15;
+				}
+			}
+			head = { x,y };
+			snake.push_back({ x,y });
+			s.insert({ x,y });
+		}
+		for (auto i : snake)
+		{
+			body.setPosition(i.first * cellsize, i.second * cellsize);
+			window.draw(body);
+		}
+		body.setPosition(head.first * cellsize, head.second * cellsize);
+		window.draw(body);
+		fruit.setPosition(randomX * cellsize, randomY * cellsize);
+		window.draw(fruit);
+		window.display();
+		sf::sleep(sf::seconds(0.10f));
+	}
+}
